@@ -6,7 +6,7 @@ const pool = require('../db');
 const router = express.Router();
 
 router.post('/login', async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password } = req.body || {};
 
   if (!email || !password) {
     return res.status(400).json({ error: 'email and password required' });
@@ -22,6 +22,14 @@ router.post('/login', async (req, res) => {
   }
 
   const admin = rows[0];
+
+  // Guard against bad seeded passwords
+  if (!admin.password_hash || !admin.password_hash.startsWith('$2')) {
+    return res.status(500).json({
+      error: 'admin password misconfigured'
+    });
+  }
+
   const ok = await bcrypt.compare(password, admin.password_hash);
 
   if (!ok) {
