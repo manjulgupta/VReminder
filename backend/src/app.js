@@ -41,7 +41,8 @@ app.use('/api/admin/schedules', scheduleRoutes);
 const smsLogRoutes = require('./routes/smsLogs');
 app.use('/api/admin/sms-logs', smsLogRoutes);
 
-
+// Upcoming Reminders for admin hospital:
+app.use('/api/admin/upcoming-reminders', require('./routes/upcomingReminders'));
 
 
 app.listen(4000, () => console.log('Backend running on 4000'));

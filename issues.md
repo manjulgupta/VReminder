@@ -7,3 +7,6 @@
 ### security:
 - 3rd person must not be able to hit anything except login page
 - closing all testing endpoints
+
+### in .env
+- route link is sourcecd from .env; need to update that later

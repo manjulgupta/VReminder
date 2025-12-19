@@ -1,30 +1,50 @@
 import { useState } from 'react';
-import client from '../api/client';
+import api from '../api/client';
 
 export default function Login({ onLogin }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
-  const submit = async e => {
+  async function handleLogin(e) {
     e.preventDefault();
+    setError('');
+
     try {
-      const res = await client.post('/admin/login', { email, password });
+      const res = await api.post('/admin/login', {
+        email,
+        password,
+      });
+
       localStorage.setItem('token', res.data.token);
       onLogin();
     } catch (err) {
-      console.error(err);
-      setError(err.response?.data?.error || 'Network/CORS error');
+      setError('Invalid credentials');
     }
-  };
+  }
 
   return (
-    <form onSubmit={submit}>
+    <div style={{ padding: 20 }}>
       <h2>Admin Login</h2>
-      <input placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
-      <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} />
-      <button>Login</button>
-      {error && <p>{error}</p>}
-    </form>
+
+      <form onSubmit={handleLogin}>
+        <input
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        /><br /><br />
+
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        /><br /><br />
+
+        <button>Login</button>
+      </form>
+
+      {error && <p style={{ color: 'red' }}>{error}</p>}
+    </div>
   );
 }

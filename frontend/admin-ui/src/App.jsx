@@ -1,21 +1,15 @@
 import { useState } from 'react';
 import Login from './pages/Login';
-import Patients from './pages/Patients';
-import Schedules from './pages/Schedules';
-import SmsLogs from './pages/SmsLogs';
+import Dashboard from './pages/Dashboard';
 
 export default function App() {
-  const [loggedIn, setLoggedIn] = useState(!!localStorage.getItem('token'));
+  const [loggedIn, setLoggedIn] = useState(
+    !!localStorage.getItem('token')
+  );
 
-  if (!loggedIn) {
-    return <Login onLogin={() => setLoggedIn(true)} />;
-  }
-
-  return (
-    <>
-      <Patients />
-      <Schedules />
-      <SmsLogs />
-    </>
+  return loggedIn ? (
+    <Dashboard />
+  ) : (
+    <Login onLogin={() => setLoggedIn(true)} />
   );
 }

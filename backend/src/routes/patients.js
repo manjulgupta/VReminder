@@ -100,5 +100,51 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
+router.delete('/:id', auth, async (req, res) => {
+  const hospitalId = req.user.hospitalId;
+  const patientId = req.params.id;
+
+  const conn = await pool.getConnection();
+
+  try {
+    await conn.beginTransaction();
+
+    // 1. delete sms logs
+    await conn.query(
+      `DELETE FROM sms_logs WHERE patient_id = ?`,
+      [patientId]
+    );
+
+    // 2. delete scheduled doses
+    await conn.query(
+      `DELETE FROM scheduled_doses WHERE patient_id = ?`,
+      [patientId]
+    );
+
+    // 3. delete patient
+    const [result] = await conn.query(
+      `DELETE FROM patients WHERE id = ? AND hospital_id = ?`,
+      [patientId, hospitalId]
+    );
+
+    await conn.commit();
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'patient not found' });
+    }
+
+    res.json({ success: true });
+
+  } catch (err) {
+    await conn.rollback();
+    console.error('Delete patient error:', err.message);
+    res.status(500).json({ error: err.message });
+  } finally {
+    conn.release();
+  }
+});
+
+
+
 
 module.exports = router;
