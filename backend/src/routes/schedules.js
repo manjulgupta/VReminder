@@ -1,3 +1,5 @@
+// gives the upcoming list of scheduled doses for patients in the hospital
+
 const express = require('express');
 const pool = require('../db');
 const auth = require('../middleware/auth');
@@ -11,6 +13,7 @@ const router = express.Router();
 router.get('/upcoming', auth, async (req, res) => {
   const hospitalId = req.user.hospitalId;
   const days = Number(req.query.days || 7);
+              //Query parameters are ALWAYS strings, so Number() req.
 
   try {
     const [rows] = await pool.query(

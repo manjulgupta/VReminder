@@ -7,3 +7,10 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <App />
   </React.StrictMode>
 );
+
+
+// react is a library for ui (lib<framework)
+// Vite gives you:
+// // instant startup
+// // instant reload
+// // minimal ceremony

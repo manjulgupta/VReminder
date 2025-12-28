@@ -2,14 +2,38 @@ const express = require('express');
 const pool = require('../db');
 const auth = require('../middleware/auth');
 const generateSchedule = require('../services/scheduleGenerator');
-
 const router = express.Router();
+
+// ASYNC/AWAIT
+// JavaScript is single-threaded. One brain cell. If it waits, everything waits. That’s bad when:
+// // hitting a database
+// // calling an API
+// // reading files
+// // sending SMS
+// // basically anything useful
+// So JS says:
+// “I won’t wait. I’ll come back later.”
+// That “come back later” thing is asynchronous code.
+// -await only works inside async functions
 
 /**
  * POST /api/admin/patients
  * Register a new patient + generate vaccine schedule
  */
+
+// without auth, anyone can call this.
 router.post('/', auth, async (req, res) => {
+  //due to auth middleware:
+  // 1. auth middleware runs FIRST
+  // 2. If token invalid → request rejected, this function never runs
+  // 3. If token valid → req.user is populated, then this runs
+
+  //routes: Define endpoints (URLs) that respond to requests
+  //middleware: A reusable function that runs BEFORE route handlers
+  
+
+
+  //HOW DOES THIS ACTUALLY WORK? HOW ARE THESE VALUES PASSESD AND WHO ANWHERE IS IT PASSED?
   const {
     parent_name,
     parent_phone,
@@ -24,9 +48,13 @@ router.post('/', auth, async (req, res) => {
 
   const hospitalId = req.user.hospitalId;
   const conn = await pool.getConnection();
+  // Why get a dedicated connection?
+  // // Usually pool.query() grabs any available connection
+  // // For transactions, you need the SAME connection for all operations
+  // // Think of it as: "Reserve a phone line for this entire conversation"
 
   try {
-    await conn.beginTransaction();
+    await conn.beginTransaction();//A transaction groups multiple database operations into an all-or-nothing unit.
 
     // 1. Insert patient
     const [result] = await conn.query(
@@ -37,7 +65,7 @@ router.post('/', auth, async (req, res) => {
         hospitalId,
         parent_name,
         parent_phone,
-        parent_email || null,
+        parent_email || null, //f parent_email is undefined/empty, store NULL in database (not empty string)
         child_name || null,
         child_dob
       ]
@@ -56,17 +84,23 @@ router.post('/', auth, async (req, res) => {
          VALUES (?, ?, ?, ?)`,
         [patientId, dose.vaccine_id, dose.dose_number, dose.scheduled_date]
       );
+      // console.log(`Entry Successful: Scheduled dose ${dose.dose_number} for vaccine ID ${dose.vaccine_id} on ${dose.scheduled_date}`);
     }
 
-    await conn.commit();
-    res.json({ patientId });
+    await conn.commit();//Makes all changes permanent in database
+    // Before commit: Changes are "pending" - other database connections can't see them yet
+    // After commit: All changes are saved atomically (all at once)
 
-  } catch (err) {
-    await conn.rollback();
+    //CHECK WHY THE PATIENT ID IS SENT BACK????
+    res.json({ patientId });
+  } 
+  catch (err) {
+    await conn.rollback();//Without rollback: Database has patient with incomplete schedule (BAD!)
     console.error('Patient creation failed:', err);
     res.status(500).json({ error: 'failed to create patient' });
-  } finally {
-    conn.release();
+  } 
+  finally {//finally runs always, whatever be the case
+    conn.release();//CRITICAL! Returns connection to pool for reuse  
   }
 });
 
@@ -144,7 +178,11 @@ router.delete('/:id', auth, async (req, res) => {
   }
 });
 
-
-
-
 module.exports = router;
+
+
+// Database Transactions (ACID Properties):
+// // Atomicity: All operations succeed or all fail
+// // Consistency: Database rules are never violated
+// // Isolation: Other connections don't see partial changes
+// // Durability: Once committed, changes survive crashes

@@ -2,6 +2,15 @@ require('dotenv').config();
 const pool = require('../db');
 const { sendSms } = require('../services/smsService');
 
+// refactor sendWhatApp logic from smsService.js
+console.log('🚀 Starting reminder job script');
+
+// console.log(
+//   "AUTHKEY DEBUG:",
+//   process.env.MSG91_AUTHKEY,
+//   process.env.MSG91_AUTHKEY?.length
+// );
+
 async function run() {
   const [rows] = await pool.query(`
     SELECT
@@ -9,7 +18,9 @@ async function run() {
       sd.patient_id,
       p.parent_phone,
       v.name AS vaccine_name,
-      sd.scheduled_date
+      sd.scheduled_date,
+      p.child_name,
+      p.parent_name
     FROM scheduled_doses sd
     JOIN patients p ON p.id = sd.patient_id
     JOIN vaccines v ON v.id = sd.vaccine_id
@@ -47,29 +58,26 @@ async function run() {
       ]
     );
 
+    r.scheduled_date=new Date(r.scheduled_date).toLocaleDateString("en-IN")
+
+    // console.log("r is:", r);
+
     const smsLogId = logResult.insertId;
 
     try {
       // 2. Send SMS (dry-run or real)
       const response = await sendSms({
-        phone: r.parent_phone,
-        message,
+        to: r.parent_phone,
+        components: {
+          body_1: { type: "text", value: r.parent_name },
+          body_2: { type: "text", value: r.child_name },
+          body_3: { type: "text", value: r.vaccine_name },
+          body_4: { type: "text", value: r.scheduled_date }
+        }
       });
 
-      // 3. Update log after attempt
-      // await pool.query(
-      //   `
-      //   UPDATE sms_logs
-      //   SET status = ?, attempts = attempts + 1, last_attempt_at = NOW()
-      //   WHERE id = ?
-      //   `,
-      //   [
-      //     response.status === 'dry-run' ? 'queued' : 'sent',
-      //     smsLogId,
-      //   ]
-      // );
-      const finalStatus =
-        response.status === 'queued' ? 'queued' : 'sent';
+
+      const finalStatus = response.status;
 
       await pool.query(
         `
@@ -79,9 +87,7 @@ async function run() {
         `,
         [finalStatus, smsLogId]
       );
-
-
-      console.log('[SMS]', r.parent_phone, response.status);
+      // console.log('[SMS]', r.parent_phone, response.status);
 
     } catch (err) {
       // 4. Failure path (important)
@@ -105,3 +111,5 @@ run()
     console.error('Job failed:', err);
     process.exit(1);
   });
+
+// module.exports = { run };

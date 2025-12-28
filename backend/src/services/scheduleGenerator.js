@@ -5,6 +5,8 @@ function addDays(date, days) {
 }
 
 function generateSchedule(childDob) {
+  console.log("Generating schedule for DOB:", childDob);
+  
   return [
     { vaccine_id: 1, dose: 1, days: 0 },     // BCG
     { vaccine_id: 2, dose: 1, days: 1 },    // Pentavalent

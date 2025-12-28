@@ -11,6 +11,8 @@ const router = express.Router();
 router.get('/', auth, async (req, res) => {
   const hospitalId = req.user.hospitalId;
 
+  // console.log(`Fetching SMS logs for hospital ID: ${hospitalId}`);
+
   try {
     const [rows] = await pool.query(
       `SELECT
