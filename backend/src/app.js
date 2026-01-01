@@ -60,13 +60,13 @@ app.use('/api/admin', adminAuthRoutes);
 const patientRoutes = require('./routes/patients');
 app.use('/api/admin/patients', patientRoutes);
 
-// Vaccines Routes logic code: TESTING WITHOUT WAITING TILL 2AM
-app.post('/internal/run-reminders', async (req, res) => {
-  const { runReminderJob } = require('./jobs/sendReminders');// modified to use sendReminders.js not reminderJob.js
-  // await runReminderJob();
+// // Vaccines Routes logic code: TESTING WITHOUT WAITING TILL 2AM
+// app.post('/internal/run-reminders', async (req, res) => {
+//   const { runReminderJob } = require('./jobs/sendReminders');// modified to use sendReminders.js not reminderJob.js
+//   // await runReminderJob();
 
-  res.json({ ok: true });
-});
+//   res.json({ ok: true });
+// });
 
 // schedule for admin hospital:
 const scheduleRoutes = require('./routes/schedules');
@@ -80,8 +80,12 @@ app.use('/api/admin/sms-logs', smsLogRoutes);
 app.use('/api/admin/upcoming-reminders', require('./routes/upcomingReminders'));
 
 
+const PORT = process.env.PORT || 4000;
+app.listen(PORT, () => {
+  console.log(`Backend running on ${PORT}`);
+});
 
-app.listen(4000, () => console.log('Backend running on 4000'));
+// app.listen(4000, () => console.log('Backend running on 4000'));
 
 // use the following code to serve images, CSS files, and JavaScript files in a directory named public:
 // // app.use(express.static('public'))

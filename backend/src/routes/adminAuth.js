@@ -49,6 +49,8 @@ router.post('/login', async (req, res) => {
     return res.status(401).json({ error: 'invalid credentials' });
   }
 
+  // console.log("JWT_SECRET:", process.env.JWT_SECRET);
+
   // “I, the server, assert that this person is adminId=1, 
   // hospitalId=1, role=admin, and I cryptographically sign this statement.”
   // 3 parts: HEADER.PAYLOAD.SIGNATURE

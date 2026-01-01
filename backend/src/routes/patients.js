@@ -30,7 +30,7 @@ router.post('/', auth, async (req, res) => {
 
   //routes: Define endpoints (URLs) that respond to requests
   //middleware: A reusable function that runs BEFORE route handlers
-  
+
 
 
   //HOW DOES THIS ACTUALLY WORK? HOW ARE THESE VALUES PASSESD AND WHO ANWHERE IS IT PASSED?
@@ -54,51 +54,81 @@ router.post('/', auth, async (req, res) => {
   // // Think of it as: "Reserve a phone line for this entire conversation"
 
   try {
-    await conn.beginTransaction();//A transaction groups multiple database operations into an all-or-nothing unit.
+    await conn.beginTransaction();
 
-    // 1. Insert patient
-    const [result] = await conn.query(
-      `INSERT INTO patients
-       (hospital_id, parent_name, parent_phone, parent_email, child_name, child_dob)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [
-        hospitalId,
-        parent_name,
-        parent_phone,
-        parent_email || null, //f parent_email is undefined/empty, store NULL in database (not empty string)
-        child_name || null,
-        child_dob
-      ]
-    );
-
-    const patientId = result.insertId;
-
-    // 2. Generate schedule
-    const schedule = generateSchedule(child_dob);
-
-    // 3. Insert scheduled doses
-    for (const dose of schedule) {
-      await conn.query(
-        `INSERT INTO scheduled_doses
-         (patient_id, vaccine_id, dose_number, scheduled_date)
-         VALUES (?, ?, ?, ?)`,
-        [patientId, dose.vaccine_id, dose.dose_number, dose.scheduled_date]
+    try {
+      // 0. Check if patient already exists
+      const [existing] = await conn.query(
+        `
+    SELECT id
+    FROM patients
+    WHERE hospital_id = ?
+      AND parent_phone = ?
+      AND child_dob = ?
+    LIMIT 1
+    `,
+        [hospitalId, parent_phone, child_dob]
       );
-      // console.log(`Entry Successful: Scheduled dose ${dose.dose_number} for vaccine ID ${dose.vaccine_id} on ${dose.scheduled_date}`);
+
+      if (existing.length > 0) {
+        // Patient already exists — do NOT insert again
+        await conn.rollback();
+
+        return res.status(409).json({
+          message: "Patient already exists for this phone number and date of birth",
+          patientId: existing[0].id
+        });
+      }
+
+      // 1. Insert patient
+      const [result] = await conn.query(
+        `
+    INSERT INTO patients
+      (hospital_id, parent_name, parent_phone, parent_email, child_name, child_dob)
+    VALUES (?, ?, ?, ?, ?, ?)
+    `,
+        [
+          hospitalId,
+          parent_name,
+          parent_phone,
+          parent_email || null,
+          child_name || null,
+          child_dob
+        ]
+      );
+
+      const patientId = result.insertId;
+
+      // 2. Generate schedule
+      const schedule = generateSchedule(child_dob);
+
+      // 3. Insert scheduled doses
+      for (const dose of schedule) {
+        await conn.query(
+          `
+      INSERT INTO scheduled_doses
+        (patient_id, vaccine_id, dose_number, scheduled_date)
+      VALUES (?, ?, ?, ?)
+      `,
+          [patientId, dose.vaccine_id, dose.dose_number, dose.scheduled_date]
+        );
+      }
+
+      await conn.commit();
+
+      res.json({ patientId });
+
+    } catch (err) {
+      await conn.rollback();
+      throw err;
     }
 
-    await conn.commit();//Makes all changes permanent in database
-    // Before commit: Changes are "pending" - other database connections can't see them yet
-    // After commit: All changes are saved atomically (all at once)
-
-    //CHECK WHY THE PATIENT ID IS SENT BACK????
-    res.json({ patientId });
-  } 
+  }
   catch (err) {
     await conn.rollback();//Without rollback: Database has patient with incomplete schedule (BAD!)
     console.error('Patient creation failed:', err);
     res.status(500).json({ error: 'failed to create patient' });
-  } 
+  }
   finally {//finally runs always, whatever be the case
     conn.release();//CRITICAL! Returns connection to pool for reuse  
   }

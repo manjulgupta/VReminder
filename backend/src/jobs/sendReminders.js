@@ -2,14 +2,7 @@ require('dotenv').config();
 const pool = require('../db');
 const { sendSms } = require('../services/smsService');
 
-// refactor sendWhatApp logic from smsService.js
 console.log('🚀 Starting reminder job script');
-
-// console.log(
-//   "AUTHKEY DEBUG:",
-//   process.env.MSG91_AUTHKEY,
-//   process.env.MSG91_AUTHKEY?.length
-// );
 
 async function run() {
   const [rows] = await pool.query(`
@@ -34,10 +27,6 @@ async function run() {
       )
   `);
 
-  // to resend, modify with this one
-  // WHERE sd.status = 'pending'
-  // AND sd.scheduled_date = CURDATE()
-
   console.log(`Found ${rows.length} reminders`);
 
   for (const r of rows) {
@@ -54,30 +43,26 @@ async function run() {
         r.scheduled_dose_id,
         r.patient_id,
         r.parent_phone,
-        message,
+        message
       ]
     );
 
-    r.scheduled_date=new Date(r.scheduled_date).toLocaleDateString("en-IN")
-
-    // console.log("r is:", r);
-
     const smsLogId = logResult.insertId;
 
+    r.scheduled_date = new Date(r.scheduled_date)
+      .toLocaleDateString("en-IN");
+
     try {
-      // 2. Send SMS (dry-run or real)
+      // 2️⃣ Send WhatsApp via Fast2SMS
       const response = await sendSms({
         to: r.parent_phone,
         components: {
-          body_1: { type: "text", value: r.parent_name },
-          body_2: { type: "text", value: r.child_name },
-          body_3: { type: "text", value: r.vaccine_name },
-          body_4: { type: "text", value: r.scheduled_date }
+          parent: r.parent_name,
+          child: r.child_name,
+          vaccine: r.vaccine_name,
+          schedule: r.scheduled_date
         }
       });
-
-
-      const finalStatus = response.status;
 
       await pool.query(
         `
@@ -85,16 +70,17 @@ async function run() {
         SET status = ?, attempts = attempts + 1, last_attempt_at = NOW()
         WHERE id = ?
         `,
-        [finalStatus, smsLogId]
+        [response.status, smsLogId]
       );
-      // console.log('[SMS]', r.parent_phone, response.status);
 
     } catch (err) {
-      // 4. Failure path (important)
+      // 3️⃣ Failure path
       await pool.query(
         `
         UPDATE sms_logs
-        SET status = 'failed', attempts = attempts + 1, last_attempt_at = NOW()
+        SET status = 'failed',
+            attempts = attempts + 1,
+            last_attempt_at = NOW()
         WHERE id = ?
         `,
         [smsLogId]
@@ -111,5 +97,3 @@ run()
     console.error('Job failed:', err);
     process.exit(1);
   });
-
-// module.exports = { run };
