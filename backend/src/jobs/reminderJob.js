@@ -259,6 +259,15 @@ async function runReminderJob() {
 // }
 
 // Run every day at 08:00
-cron.schedule('15 10 * * *', runReminderJob);
+// cron.schedule('15 10 * * *', runReminderJob);
+
+cron.schedule(
+  '40 10 * * *',
+  runReminderJob,
+  {
+    timezone: 'Asia/Kolkata'
+  }
+);
+
 
 module.exports = { runReminderJob };
