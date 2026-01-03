@@ -259,6 +259,6 @@ async function runReminderJob() {
 // }
 
 // Run every day at 08:00
-cron.schedule('0 8 * * *', runReminderJob);
+cron.schedule('15 10 * * *', runReminderJob);
 
 module.exports = { runReminderJob };

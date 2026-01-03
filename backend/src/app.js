@@ -68,6 +68,13 @@ app.use('/api/admin/patients', patientRoutes);
 //   res.json({ ok: true });
 // });
 
+app.post('/internal/run-reminders', async (req, res) => {
+  const { runReminderJob } = require('./jobs/reminderJob');
+  await runReminderJob();
+
+  res.json({ ok: true });
+});
+
 // schedule for admin hospital:
 const scheduleRoutes = require('./routes/schedules');
 app.use('/api/admin/schedules', scheduleRoutes);

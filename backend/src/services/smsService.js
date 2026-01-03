@@ -103,7 +103,7 @@ async function sendSms({ to, components }) {
     schedule
   } = components;
 
-  console.log(`Sending WhatsApp to ${to} with components:`, components, "from smsService.js");
+  // console.log(`Sending WhatsApp to ${to} with components:`, components, "from smsService.js");
 
   const variableValues =
     `${parent}|${child}|${vaccine}|${schedule}`;
