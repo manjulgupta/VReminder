@@ -262,7 +262,7 @@ async function runReminderJob() {
 // cron.schedule('15 10 * * *', runReminderJob);
 
 cron.schedule(
-  '40 10 * * *',
+  '0 8 * * *',
   runReminderJob,
   {
     timezone: 'Asia/Kolkata'
