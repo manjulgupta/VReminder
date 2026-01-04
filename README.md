@@ -36,11 +36,11 @@ The Vaccination Reminder Platform manages patient vaccination schedules and send
 
 ### The Problem
 
-Parents often forget their child's vaccination dates, leading to missed immunizations and potential health complications. Traditional reminder systems are either non-existent or unreliable, putting children's health at risk.
+Parents often forget their child's vaccination dates, leading to missed immunizations and potential health complications. No reminder systems exist, putting children's health at risk.
 
 **Key challenges identified:**
 - 📅 Parents struggle to track multiple vaccination dates
-- 📱 No automated reminder system in most clinics
+- 📱 No automated reminder system in clinics and hospitals
 - 💰 High infrastructure costs (VPS hosting, WhatsApp API, DLT verification, SMS rates)
 - 🏥 Hospitals lack a centralized patient management system
 
@@ -57,6 +57,7 @@ Instead of bearing the entire cost ourselves, we partnered with **hospitals and 
 
 ✅ **Brand Visibility** - Messages are sent from the hospital's number, subtly advertising their services  
 ✅ **Patient Retention** - Automated reminders improve patient compliance and satisfaction  
+✅ **Reminders for the Parents** - Sent thrice, reminding them about the due date and vaccine name
 ✅ **No Additional Effort** - The system runs in the background, requiring minimal intervention  
 
 This approach helps us **offset messaging and hosting costs** while providing immense value to both parents and healthcare providers.
@@ -211,6 +212,10 @@ JWT_SECRET=your_jwt_secret_key_min_32_chars
 MSG91_AUTHKEY=your_msg91_authkey
 MSG91_WHATSAPP_NUMBER=91xxxxxxxxxx
 MSG91_NAMESPACE=your_namespace
+
+FAST2SMS_API_KEY=your api key
+FAST2SMS_MESSAGE_ID=9844
+FAST2SMS_PHONE_NUMBER_ID=91xxxxxxxxxx
 ```
 
 Start the server:
