@@ -20,3 +20,4 @@ frontend/build/
 npm-debug.log*
 
 dist
+trial.js
